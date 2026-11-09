@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google</title>
+  <!-- Favicon / Icona del sito -->
+  <link rel="icon" href="https://www.google.com/favicon.ico" type="image/x-icon">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      color: #202124;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 15px 30px;
+      gap: 15px;
+    }
+    .top-bar a {
+      color: rgba(0,0,0,0.87);
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .top-bar a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Icona a 9 puntini (Griglia Google) */
+    .grid-icon {
+      width: 24px;
+      height: 24px;
+      fill: #5f6368;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .grid-icon:hover {
+      background-color: rgba(60,64,67,0.08);
+    }
+
+    .sign-in-btn {
+      background-color: #1a73e8;
+      color: #fff !important;
+      padding: 9px 23px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Main Container */
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 584px;
+      padding: 0 20px;
+      margin-top: -50px;
+    }
+
+    /* Logo Google ufficiale */
+    .logo {
+      width: 272px;
+      height: 92px;
+      margin-bottom: 25px;
+    }
+
+    /* Search Box */
+    .search-box {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      border: 1px solid #dfe1e5;
+      border-radius: 24px;
+      padding: 10px 15px;
+      box-shadow: none;
+      transition: box-shadow 0.2s;
+    }
+    .search-box:hover, .search-box:focus-within {
+      box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+      border-color: rgba(223,225,229,0);
+    }
+    .search-icon {
+      width: 20px;
+      height: 20px;
+      fill: #9aa0a6;
+      margin-right: 12px;
+    }
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+
+    /* Buttons */
+    .buttons-container {
+      margin-top: 30px;
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      background-color: #f8f9fa;
+      border: 1px solid #f8f9fa;
+      border-radius: 4px;
+      color: #3c4043;
+      font-size: 14px;
+      padding: 10px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn:hover {
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      background-color: #f8f9fa;
+      border: 1px solid #dadce0;
+      color: #202124;
+    }
+
+    /* Footer */
+    footer {
+      width: 100%;
+      background: #f2f2f2;
+      color: #70757a;
+      font-size: 14px;
+    }
+    .footer-location {
+      padding: 15px 30px;
+      border-bottom: 1px solid #dadce0;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 30px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: #70757a;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <a href="#" class="sound-trigger">Gmail</a>
+    <a href="#" class="sound-trigger">Immagini</a>
+    <!-- Icona a 9 puntini (Google Apps) -->
+    <svg class="grid-icon sound-trigger" viewBox="0 0 24 24" title="App Google">
+      <path d="M6,8c1.1,0,2-0.9,2-2s-0.9-2-2-2s-2,0.9-2,2S4.9,8,6,8z M12,4c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S13.1,4,12,4z M18,4 c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S19.1,4,18,4z M6,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S7.1,10,6,10z M12,10 c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S13.1,10,12,10z M18,10c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S19.1,10,18,10z M6,16 c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S7.1,16,6,16z M12,16c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S13.1,16,12,16z M18,16 c-1.1,0-2,0.9-2,2s0.9,2,2,2s2-0.9,2-2S19.1,16,18,16z"/>
+    </svg>
+    <a href="#" class="sign-in-btn sound-trigger">Accedi</a>
+  </div>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google">
+    
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24">
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <!-- Rimosso autofocus per evitare l'apertura automatica all'avvio -->
+      <input type="text" class="search-input sound-trigger" id="searchInput" placeholder="">
+    </div>
+
+    <div class="buttons-container">
+      <button class="btn sound-trigger" id="searchBtn">Cerca con Google</button>
+      <button class="btn sound-trigger" id="luckyBtn">Mi sento fortunato</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-location">Italia</div>
+    <div class="footer-links">
+      <div>
+        <a href="#" class="sound-trigger">Informazioni</a>
+        <a href="#" class="sound-trigger">Pubblicità</a>
+        <a href="#" class="sound-trigger">Business</a>
+        <a href="#" class="sound-trigger">Come funziona la Ricerca</a>
+      </div>
+      <div>
+        <a href="#" class="sound-trigger">Privacy</a>
+        <a href="#" class="sound-trigger">Termini</a>
+        <a href="#" class="sound-trigger">Impostazioni</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Elemento Audio -->
+  <audio id="fartAudio" src="https://www.myinstants.com/media/sounds/bastavrdo_psjKcIl.mp3" loop preload="auto"></audio>
+
+  <script>
+    const audio = document.getElementById('fartAudio');
+    const searchInput = document.getElementById('searchInput');
+
+    function triggerFart(e) {
+      if (e && e.target.tagName === 'A') e.preventDefault();
+      audio.play().catch(err => {
+        console.log("Audio bloccato:", err);
+      });
+    }
+
+    // Suono al tasto Invio dentro l'input
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        triggerFart();
+      }
+    });
+
+    // Seleziona tutti gli elementi con la classe .sound-trigger (inclusa la barra di ricerca)
+    const interactiveElements = document.querySelectorAll('.sound-trigger');
+    interactiveElements.forEach(el => {
+      el.addEventListener('click', triggerFart);
+      el.addEventListener('focus', triggerFart);
+    });
+  </script>
+
+</body>
+</html>
