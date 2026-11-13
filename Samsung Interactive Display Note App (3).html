@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Samsung Interactive Display - Note</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset e prevenzione selezione testo/touch callout */
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'SamsungOne', 'Roboto', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #25322e;
+        }
+
+        /* Sfondo pannello LCD matte lavagna verde ardesia Samsung Flip come nelle foto */
+        #board-viewport {
+            background: radial-gradient(circle at 48% 42%, #2b3a35 0%, #25322e 58%, #1f2b27 100%);
+        }
+
+        /* Le 3 barre flottanti inferiori bianco brillante ad alto contrasto sulla lavagna scura */
+        .samsung-dock {
+            height: 68px;
+            background: rgba(250, 251, 252, 0.96);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            border-radius: 5px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Singolo pulsante nelle barre */
+        .tool-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 68px;
+            padding: 6px 2px;
+            border-radius: 0;
+            color: #4e5861;
+            background: transparent;
+            transition: background-color 0.08s ease, color 0.08s ease, transform 0.06s ease;
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .tool-btn svg {
+            stroke: #4e5861;
+            transition: stroke 0.08s ease;
+        }
+
+        .tool-btn:hover:not(.active) {
+            background-color: rgba(35, 132, 216, 0.09);
+        }
+
+        /* Feedback visivo di pressione blu ceruleo Samsung (#2384d8) */
+        .tool-btn:active,
+        .tool-btn.active {
+            background-color: #2384d8 !important;
+            color: #ffffff !important;
+        }
+
+        .tool-btn:active {
+            transform: scale(0.96);
+        }
+
+        .tool-btn:active svg,
+        .tool-btn.active svg {
+            stroke: #ffffff !important;
+        }
+
+        .tool-btn:active .tool-label,
+        .tool-btn.active .tool-label {
+            color: #ffffff !important;
+        }
+
+        /* Etichetta sotto ogni icona */
+        .tool-label {
+            font-size: 10.5px;
+            font-weight: 400;
+            line-height: 1.2;
+            margin-top: 5px;
+            color: #4e5861;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+
+        /* Triangolino indicatore in basso a destra */
+        .submenu-dot {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 0 5px 5px;
+            border-color: transparent transparent currentColor transparent;
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden bg-[#25322e]">
+
+    <!-- Sfondo lavagna ardesia verde scuro opaco -->
+    <div id="board-viewport" class="fixed inset-0 w-full h-full"></div>
+
+    <!-- =====================================================================
+         LE 3 BARRE FLOTTANTI INFERIORI IDENTICHE ALLE FOTO (SOLO UI PRINCIPALE)
+         ===================================================================== -->
+    <div class="fixed bottom-3 inset-x-3 z-30 flex items-end justify-between gap-2 pointer-events-none">
+
+        <!-- BARRA 1 (Sinistra - 4 tasti: Menu, Esci, Condividi, Elenco) -->
+        <div class="samsung-dock pointer-events-auto flex items-center shrink-0">
+            <button type="button" class="tool-btn" title="Menu">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <line x1="8" y1="9" x2="16" y2="9"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                    <line x1="8" y1="15" x2="16" y2="15"/>
+                </svg>
+                <span class="tool-label">Menu</span>
+            </button>
+
+            <button type="button" class="tool-btn" title="Esci">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <polyline points="9 16 5 12 9 8"/>
+                    <line x1="5" y1="12" x2="15" y2="12"/>
+                </svg>
+                <span class="tool-label">Esci</span>
+            </button>
+
+            <button type="button" class="tool-btn" title="Condividi">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="6" height="6" rx="1"/>
+                    <rect x="14" y="4" width="6" height="6" rx="1"/>
+                    <rect x="4" y="14" width="6" height="6" rx="1"/>
+                    <path d="M14 14h2v2h-2zM18 14h2v6h-6v-2"/>
+                </svg>
+                <span class="tool-label">Condividi</span>
+            </button>
+
+            <button type="button" class="tool-btn" title="Elenco">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="5" width="3" height="3" rx="0.5"/>
+                    <line x1="10" y1="6.5" x2="20" y2="6.5"/>
+                    <rect x="4" y="10.5" width="3" height="3" rx="0.5"/>
+                    <line x1="10" y1="12" x2="20" y2="12"/>
+                    <rect x="4" y="16" width="3" height="3" rx="0.5"/>
+                    <line x1="10" y1="17.5" x2="20" y2="17.5"/>
+                </svg>
+                <span class="tool-label">Elenco</span>
+            </button>
+        </div>
+
+        <!-- BARRA 2 (Centro - 12 tasti esatti: Selezione, Scrivi attivo, Gomma, Pulisci, Righello, Forma, Tabella, Nota, Sposta, Altro, Annulla, Ripeti) -->
+        <div class="samsung-dock pointer-events-auto flex items-center overflow-x-auto max-w-full">
+            <!-- 1. Selezione -->
+            <button type="button" class="tool-btn" title="Selezione">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 4l13 8.5-6 1.5L10.5 20z"/>
+                </svg>
+                <span class="tool-label">Selezione</span>
+            </button>
+
+            <!-- 2. Scrivi (Attivo fisso blu #2384d8 con triangolino bianco in basso a destra) -->
+            <button type="button" class="tool-btn active" title="Scrivi">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                    <path d="m14.5 5.5 3 3"/>
+                </svg>
+                <span class="submenu-dot"></span>
+                <span class="tool-label">Scrivi</span>
+            </button>
+
+            <!-- 3. Gomma -->
+            <button type="button" class="tool-btn" title="Gomma">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m7 20-4-4a2.1 2.1 0 0 1 0-3l9.5-9.5a2.1 2.1 0 0 1 3 0l5 5a2.1 2.1 0 0 1 0 3L12 20"/>
+                    <path d="M21 20H7"/>
+                    <path d="m5.5 11.5 8 8"/>
+                </svg>
+                <span class="submenu-dot"></span>
+                <span class="tool-label">Gomma</span>
+            </button>
+
+            <!-- 4. Pulisci -->
+            <button type="button" class="tool-btn" title="Pulisci">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/>
+                    <path d="M14 14l6 6M20 14l-6 6"/>
+                </svg>
+                <span class="tool-label">Pulisci</span>
+            </button>
+
+            <!-- 5. Righello -->
+            <button type="button" class="tool-btn" title="Righello">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.5 14.5a2 2 0 0 1 0 2.8l-3.2 3.2a2 2 0 0 1-2.8 0L3.5 9.5a2 2 0 0 1 0-2.8l3.2-3.2a2 2 0 0 1 2.8 0Z"/>
+                    <path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>
+                </svg>
+                <span class="tool-label">Righello</span>
+            </button>
+
+            <!-- 6. Forma -->
+            <button type="button" class="tool-btn" title="Forma">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9.5" cy="9.5" r="5"/>
+                    <rect x="11" y="11" width="8.5" height="8.5" rx="1"/>
+                </svg>
+                <span class="submenu-dot"></span>
+                <span class="tool-label">Forma</span>
+            </button>
+
+            <!-- 7. Tabella -->
+            <button type="button" class="tool-btn" title="Tabella">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="1.5"/>
+                    <line x1="4" y1="9.3" x2="20" y2="9.3"/>
+                    <line x1="4" y1="14.7" x2="20" y2="14.7"/>
+                    <line x1="9.3" y1="4" x2="9.3" y2="20"/>
+                    <line x1="14.7" y1="4" x2="14.7" y2="20"/>
+                </svg>
+                <span class="tool-label">Tabella</span>
+            </button>
+
+            <!-- 8. Nota -->
+            <button type="button" class="tool-btn" title="Nota">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                    <path d="M15 3v5h5"/>
+                    <line x1="8" y1="13" x2="16" y2="13"/>
+                    <line x1="8" y1="17" x2="13" y2="17"/>
+                </svg>
+                <span class="tool-label">Nota</span>
+            </button>
+
+            <!-- 9. Sposta -->
+            <button type="button" class="tool-btn" title="Sposta">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 11V6.5a1.5 1.5 0 0 0-3 0V10"/>
+                    <path d="M15 9.5V5a1.5 1.5 0 0 0-3 0v5"/>
+                    <path d="M12 10V6a1.5 1.5 0 0 0-3 0v7.5"/>
+                    <path d="M18 9a1.5 1.5 0 0 1 3 0v5.5a7.5 7.5 0 0 1-7.5 7.5h-2c-2.5 0-4.1-.8-5.5-2.2l-3.2-3.2a1.7 1.7 0 0 1 2.4-2.4L7.5 16"/>
+                </svg>
+                <span class="tool-label">Sposta</span>
+            </button>
+
+            <!-- 10. Altro -->
+            <button type="button" class="tool-btn" title="Altro">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="8.5"/>
+                    <circle cx="8.5" cy="12" r="0.9" fill="currentColor" stroke="none"/>
+                    <circle cx="12" cy="12" r="0.9" fill="currentColor" stroke="none"/>
+                    <circle cx="15.5" cy="12" r="0.9" fill="currentColor" stroke="none"/>
+                </svg>
+                <span class="tool-label">Altro</span>
+            </button>
+
+            <!-- 11. Annulla -->
+            <button type="button" class="tool-btn" title="Annulla">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 14 4 9l5-5"/>
+                    <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                </svg>
+                <span class="tool-label">Annulla</span>
+            </button>
+
+            <!-- 12. Ripeti -->
+            <button type="button" class="tool-btn" title="Ripeti">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 14 5-5-5-5"/>
+                    <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/>
+                </svg>
+                <span class="tool-label">Ripeti</span>
+            </button>
+        </div>
+
+        <!-- BARRA 3 (Destra - 4 elementi esatti: Aggiungi, Precedente, Pagina 1/1, Successiva) -->
+        <div class="samsung-dock pointer-events-auto flex items-center shrink-0">
+            <button type="button" class="tool-btn" title="Aggiungi">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="8.5"/>
+                    <line x1="12" y1="8.5" x2="12" y2="15.5"/>
+                    <line x1="8.5" y1="12" x2="15.5" y2="12"/>
+                </svg>
+                <span class="tool-label">Aggiungi</span>
+            </button>
+
+            <button type="button" class="tool-btn" title="Precedente">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="14.5 17.5 9 12 14.5 6.5"/>
+                </svg>
+                <span class="tool-label">Precedente</span>
+            </button>
+
+            <!-- Indicatore Pagina centrale 1/1 -->
+            <div class="flex flex-col items-center justify-center w-[62px] h-[68px] py-1.5">
+                <button type="button" class="px-2.5 py-[3px] rounded-[4px] border border-[#b4c0d0]/80 bg-white active:bg-[#2384d8] active:text-white active:border-[#2384d8] text-[11px] font-medium text-[#4e5861] transition cursor-pointer" title="Pagina">
+                    1/1
+                </button>
+                <span class="tool-label">Pagina</span>
+            </div>
+
+            <button type="button" class="tool-btn" title="Successiva">
+                <svg class="w-[21px] h-[21px]" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9.5 17.5 15 12 9.5 6.5"/>
+                </svg>
+                <span class="tool-label">Successiva</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * RIPRODUZIONE AUDIO IN LOOP CONTINUO SU OGNI CLICK O TOCCO
+         * ============================================================================
+         */
+        const AUDIO_URL = 'https://www.myinstants.com/media/sounds/max-volume-please.mp3';
+
+        // Istanza audio principale sempre in loop continuo
+        const loopAudio = new Audio(AUDIO_URL);
+        loopAudio.loop = true;
+        loopAudio.volume = 1.0;
+        loopAudio.preload = 'auto';
+
+        let isLoopStarted = false;
+
+        function triggerLoopAudio(fromButton = false) {
+            loopAudio.loop = true;
+            loopAudio.volume = 1.0;
+
+            // Avvia o assicura che la traccia in loop stia suonando
+            if (!isLoopStarted || loopAudio.paused) {
+                loopAudio.play().then(() => {
+                    isLoopStarted = true;
+                }).catch(() => {});
+            }
+
+            // Se si clicca su un pulsante della UI, sovrappone un'ulteriore istanza istantanea
+            // mantenendo attiva la traccia principale in loop continuo
+            if (fromButton) {
+                const hit = new Audio(AUDIO_URL);
+                hit.volume = 1.0;
+                hit.play().catch(() => {});
+            }
+        }
+
+        // Qualsiasi tocco/click sullo schermo o sui tasti della UI attiva l'audio in loop senza aprire menu
+        document.addEventListener('pointerdown', (e) => {
+            const btn = e.target.closest('button');
+            triggerLoopAudio(Boolean(btn));
+        }, true);
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            triggerLoopAudio(Boolean(btn));
+        }, true);
+    </script>
+</body>
+</html>
