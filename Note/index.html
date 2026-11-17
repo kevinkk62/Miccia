@@ -36,6 +36,19 @@
         radial-gradient(ellipse at 50% 42%, rgba(255, 255, 255, 0.035) 0%, rgba(0, 0, 0, 0.16) 100%),
         #25322e;
       overflow: hidden;
+      touch-action: none;
+    }
+
+    /* Canvas a tutto schermo per la scrittura a mano libera */
+    #chalkCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+      z-index: 1;
     }
 
     /* Contenitore delle tre barre flottanti inferiori */
@@ -200,6 +213,9 @@
 </head>
 <body>
   <div class="board" id="board">
+    <!-- Superficie di scrittura a mano libera -->
+    <canvas id="chalkCanvas"></canvas>
+
     <div class="dock-container">
 
       <!-- BARRA SINISTRA: Menu, Uscita, Condividi, Elenco -->
@@ -390,95 +406,147 @@
 
   <script>
     (function () {
-      const AUDIO_URL = "https://www.myinstants.com/media/sounds/max-volume-please.mp3";
-      const loopAudio = new Audio(AUDIO_URL);
-      loopAudio.loop = true;
-      loopAudio.preload = "auto";
-      loopAudio.volume = 1.0;
+      /* =========================================================
+         1. CONFIGURAZIONE SCRITTURA SU CANVAS (GESSO BIANCO FLUIDO)
+         ========================================================= */
+      const canvas = document.getElementById("chalkCanvas");
+      const ctx = canvas.getContext("2d", { desynchronized: true });
 
-      let firstScreenTapDone = false;
-      let audioStarted = false;
-      let lastTouchTimestamp = 0;
+      const CHALK_COLOR = "rgba(245, 247, 250, 0.94)";
+      const activeStrokes = new Map(); // Tracciamento multi-touch/stilo/mouse
 
-      function enterFullscreen() {
-        const el = document.documentElement;
-        const req =
-          el.requestFullscreen ||
-          el.webkitRequestFullscreen ||
-          el.mozRequestFullScreen ||
-          el.msRequestFullscreen;
+      function resizeCanvas() {
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
-        if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
-          try {
-            const p = req.call(el);
-            if (p && typeof p.catch === "function") {
-              p.catch(() => {});
-            }
-          } catch (e) {}
+        // Salva il disegno corrente prima del ridimensionamento
+        let snapshot = null;
+        if (canvas.width > 0 && canvas.height > 0) {
+          snapshot = document.createElement("canvas");
+          snapshot.width = canvas.width;
+          snapshot.height = canvas.height;
+          const snapCtx = snapshot.getContext("2d");
+          snapCtx.drawImage(canvas, 0, 0);
+        }
+
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = CHALK_COLOR;
+        ctx.fillStyle = CHALK_COLOR;
+
+        if (snapshot) {
+          ctx.drawImage(snapshot, 0, 0, width, height);
         }
       }
 
-      function startLoopAudio() {
-        if (audioStarted && !loopAudio.paused) return;
-        loopAudio.volume = 1.0;
-        const playPromise = loopAudio.play();
-        if (playPromise && typeof playPromise.then === "function") {
-          playPromise
-            .then(() => {
-              audioStarted = true;
-            })
-            .catch(() => {});
-        } else {
-          audioStarted = true;
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // Calcolo spessore naturale reattivo a pressione e velocità
+      function computeStrokeWidth(e, prevPoint, currentPoint) {
+        const baseWidth = 3.2;
+
+        // Se stilo/schermo supporta pressione reale (diversa dal valore neutro 0.5 o 0)
+        if (e.pointerType === "pen" && typeof e.pressure === "number" && e.pressure > 0) {
+          return Math.max(1.6, Math.min(7.5, 1.5 + e.pressure * 5.2));
         }
+
+        if (!prevPoint) return baseWidth;
+
+        const dx = currentPoint.x - prevPoint.x;
+        const dy = currentPoint.y - prevPoint.y;
+        const dist = Math.hypot(dx, dy);
+        const dt = Math.max(1, currentPoint.t - prevPoint.t);
+        const velocity = dist / dt; // px/ms
+
+        // Tratto leggermente più sottile nei movimenti rapidi, più pieno nei tratti lenti
+        const speedFactor = Math.max(0.68, Math.min(1.22, 1.15 - velocity * 0.16));
+        return baseWidth * speedFactor;
       }
 
-      function handleInteraction(target, isTouch) {
-        const now = Date.now();
-        if (!isTouch && now - lastTouchTimestamp < 450) {
-          return;
-        }
-        if (isTouch) {
-          lastTouchTimestamp = now;
-        }
+      function drawSmoothSegment(stroke, newPoint, width) {
+        const { p0, p1, lastWidth } = stroke;
+        const mid1 = { x: (p0.x + p1.x) * 0.5, y: (p0.y + p1.y) * 0.5 };
+        const mid2 = { x: (p1.x + newPoint.x) * 0.5, y: (p1.y + newPoint.y) * 0.5 };
 
-        const btn = target.closest(".tool-btn");
-        if (btn) {
-          btn.classList.add("pressed");
-          setTimeout(() => btn.classList.remove("pressed"), 140);
-        }
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = CHALK_COLOR;
+        ctx.shadowColor = "rgba(245, 247, 250, 0.22)";
+        ctx.shadowBlur = 1.2;
+        ctx.lineWidth = (lastWidth + width) * 0.5;
 
-        // Primo tocco ovunque sullo schermo -> attiva schermo intero senza audio
-        if (!firstScreenTapDone) {
-          firstScreenTapDone = true;
-          enterFullscreen();
-          return;
-        }
+        ctx.beginPath();
+        ctx.moveTo(mid1.x, mid1.y);
+        ctx.quadraticCurveTo(p1.x, p1.y, mid2.x, mid2.y);
+        ctx.stroke();
+        ctx.restore();
 
-        // Dal secondo tocco in poi su qualsiasi tasto -> avvia audio in loop
-        if (btn) {
-          enterFullscreen();
-          startLoopAudio();
-        }
+        stroke.p0 = p1;
+        stroke.p1 = newPoint;
+        stroke.lastWidth = width;
       }
 
-      document.addEventListener(
-        "touchend",
-        function (e) {
-          handleInteraction(e.target, true);
-        },
-        { passive: true, capture: true }
-      );
+      canvas.addEventListener("pointerdown", function (e) {
+        if (e.button !== undefined && e.button !== 0 && e.pointerType === "mouse") return;
 
-      document.addEventListener(
-        "click",
-        function (e) {
-          handleInteraction(e.target, false);
-        },
-        { capture: true }
-      );
-    })();
-  </script>
-</body>
-    </html>
-    
+        try {
+          canvas.setPointerCapture(e.pointerId);
+        } catch (_) {}
+
+        const pt = { x: e.clientX, y: e.clientY, t: performance.now() };
+        const w = computeStrokeWidth(e, null, pt);
+
+        // Punto iniziale immediato (anche per singoli tocchi/puntini)
+        ctx.save();
+        ctx.fillStyle = CHALK_COLOR;
+        ctx.shadowColor = "rgba(245, 247, 250, 0.22)";
+        ctx.shadowBlur = 1.2;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, w * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        activeStrokes.set(e.pointerId, {
+          p0: pt,
+          p1: pt,
+          lastWidth: w
+        });
+      });
+
+      canvas.addEventListener("pointermove", function (e) {
+        const stroke = activeStrokes.get(e.pointerId);
+        if (!stroke) return;
+
+        const events = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [e];
+        for (const ev of events) {
+          const pt = { x: ev.clientX, y: ev.clientY, t: performance.now() };
+          const w = computeStrokeWidth(ev, stroke.p1, pt);
+          drawSmoothSegment(stroke, pt, w);
+        }
+      });
+
+      function endStroke(e) {
+        const stroke = activeStrokes.get(e.pointerId);
+        if (!stroke) return;
+
+        const pt = { x: e.clientX, y: e.clientY, t: performance.now() };
+        drawSmoothSegment(stroke, pt, stroke.lastWidth);
+        activeStrokes.delete(e.pointerId);
+
+        try {
+          if (canvas.hasPointerCapture(e.pointerId)) {
+            canvas.releasePointerCapture(e.pointerId);
+          }
+        } catch (_) {}
+      }
+
+      canvas.addEventListe
