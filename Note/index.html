@@ -205,6 +205,30 @@
         width: 48px;
       }
     }
+
+    /* Samsung Interactive Display dock */
+    .dock-container { bottom: max(14px, env(safe-area-inset-bottom, 14px)); padding: 0 clamp(8px, 2.4vw, 30px); gap: clamp(6px, 1.2vw, 16px); align-items: center; }
+    .toolbar { height: clamp(42px, 4.8vh, 54px); flex: 0 1 auto; background: #f7f8f9; border: 1px solid rgba(255,255,255,.92); border-radius: 4px; box-shadow: 0 3px 12px rgba(0,0,0,.24), 0 1px 2px rgba(0,0,0,.12); }
+    .toolbar:first-child, .toolbar:last-child { flex-shrink: 0; }
+    .tool-btn { width: clamp(25px, 3.15vw, 43px); min-width: 0; gap: 2px; padding: 4px 1px 3px; color: #58616b; }
+    .tool-btn svg { width: clamp(16px, 1.7vw, 21px); height: clamp(16px, 1.7vw, 21px); }
+    .tool-label { font-size: clamp(7px, .72vw, 9.5px); line-height: 1; font-weight: 500; }
+    .tool-btn.active { background: #2384d8; color: #fff; }
+    .tool-btn:focus-visible { outline: 2px solid #2384d8; outline-offset: -2px; }
+    .page-indicator { width: clamp(34px, 3.15vw, 43px); min-width: 0; gap: 2px; padding: 4px 1px 3px; }
+    .page-pill { min-width: 30px; height: 19px; padding: 0 4px; font-size: 9px; border-radius: 3px; }
+    @media (max-width: 860px) {
+      .dock-container { left: 0; right: 0; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; padding: 0 8px; gap: 7px; scrollbar-width: none; }
+      .dock-container::-webkit-scrollbar { display: none; }
+      .toolbar { flex-shrink: 0; height: 48px; }
+      .tool-btn { width: 35px; }
+      .tool-label { font-size: 8px; }
+    }
+    @media (max-width: 480px) {
+      .dock-container { bottom: max(8px, env(safe-area-inset-bottom, 8px)); }
+      .toolbar { height: 46px; } .tool-btn { width: 32px; }
+      .tool-btn svg { width: 18px; height: 18px; } .tool-label { font-size: 7.5px; }
+    }
   </style>
 </head>
 <body>
@@ -452,7 +476,7 @@
         const height = window.innerHeight;
         canvas.width = width * dpr;
         canvas.height = height * dpr;
-        ctx.scale(dpr, dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.strokeStyle = "rgba(245, 247, 250, 0.94)";
         ctx.lineWidth = 3.5;
         ctx.lineCap = "round";
@@ -508,26 +532,18 @@
       canvas.addEventListener("pointerup", stopDrawing);
       canvas.addEventListener("pointercancel", stopDrawing);
 
+      // Stato visivo dello strumento selezionato nella barra centrale.
+      const centralToolbar = document.querySelectorAll(".dock-container .toolbar")[1];
+      if (centralToolbar) {
+        centralToolbar.querySelectorAll(".tool-btn").forEach((button) => {
+          button.addEventListener("click", () => {
+            centralToolbar.querySelectorAll(".tool-btn").forEach((item) => item.classList.remove("active"));
+            button.classList.add("active");
+          });
+        });
+      }
+
       // Gestione tocchi e click sui bottoni delle barre
       document.addEventListener("click", function (e) {
         const btn = e.target.closest(".tool-btn");
-        if (btn) {
-          btn.classList.add("pressed");
-          setTimeout(() => btn.classList.remove("pressed"), 140);
-        }
-
-        if (!firstScreenTapDone) {
-          firstScreenTapDone = true;
-          enterFullscreen();
-          return;
-        }
-
-        if (btn) {
-          enterFullscreen();
-          startLoopAudio();
-        }
-      });
-    })();
-  </script>
-</body>
-</html>
+ 
